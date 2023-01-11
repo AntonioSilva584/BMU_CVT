@@ -7,6 +7,9 @@
 #include "MLX90614.h"
 #include <math.h>
 
+
+#define default_addr   (0x00)
+
 //Variables Iniciation
 double MeasureVoltage = 0.0;
 double MeasureSystemCurrent= 0.0;
@@ -20,6 +23,10 @@ double a ;
 double b ;
 double c ;
 double d ;
+
+double A, B, C, D;
+
+
 
 /*Pins*/
 AnalogIn ReadVoltage(PA_1);                 // VARIÁVEL PARA ARMAZENAR A LEITURA DO PINO ANALÓGICO
@@ -129,8 +136,7 @@ int main()
                Led = !Led;
             }  
           
-          */
-            
+          */            
             txMsg.clear(SOC_ID);
             txMsg << SOC;
             can.write(txMsg);
@@ -140,8 +146,8 @@ int main()
         case CVTtemperature_ST:
             
             
-            //MeasureCVTtemperature = (uint8_t) CVT_Temperature(); 
-            MeasureCVTtemperature = 90;
+            MeasureCVTtemperature = (uint8_t) CVT_Temperature(); 
+            //MeasureCVTtemperature = 90;
             txMsg.clear(TempCVT_ID);
             txMsg << MeasureCVTtemperature;
             
@@ -156,8 +162,15 @@ int main()
             uint16_t SignalVacsI0 = ReadSystemCurrent.read_u16();
             Calculate_VacsI0 = (SignalVacsI0 * (ADCVoltageLimit / 65535.0));
 
+
             MeasureSystemCurrent = SystemCurrent_moving_average();
-            Led = !Led;
+            //Led = !Led;
+            
+             
+
+            txMsg.clear(Current_ID);
+            txMsg << MeasureSystemCurrent;
+            can.write(txMsg);
             break;          
         
         }
@@ -279,7 +292,10 @@ int i,j;
     double temp_amb,med_amb,x_amb;
     double temp_obj,med_obj,x_obj; 
 
- //if (mlx.read_temp(1) != 0 ){
+//teste comunicação i2c
+    char ucdata_write[2];
+
+ if (!i2c.write((default_addr|0x00), ucdata_write, 1, 0)){// Check for ACK from i2c Device
 
     for(j = 0; j < (CVTsample); j++){ 
 
@@ -289,30 +305,20 @@ int i,j;
            
 
                 temp_obj = mlx.read_temp(1);
-        
-           
-                //x_amb += temp_amb;
                 x_obj += temp_obj;
-        
-        
-               // med_amb = x_amb/ (double)CVTsample;
                 med_obj = x_obj/ (double)CVTsample;
-        
-        
-                 if(med_amb > AverageEnviromentTemp){
-                AverageEnviromentTemp = med_amb;
-                 }
+    
                 if(med_obj > AverageObjectTemp){
                 AverageObjectTemp = med_obj;
                  }
             }
         }
-    //}
-/*
-    else {
+    }
+
+    else{
         AverageObjectTemp = 0;
     }
-  */
+
     //return value;
     return AverageObjectTemp/(double)CVTsample; // I don't know why we need divide by sample, but works.
 }

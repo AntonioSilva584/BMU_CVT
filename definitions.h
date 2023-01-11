@@ -27,6 +27,7 @@
 #define SOC_ID          0x302       // 1by
 #define TempCVT_ID      0x401       // 1by
 #define Voltage_ID      0x502       // 1by
+#define Current_ID      0x505
 
     
 typedef struct
