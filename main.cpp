@@ -98,6 +98,7 @@ int main()
             buffer_full = true;
             //Led = 0;
             state_buffer.pop(current_state);
+            
         }
         else
         {
