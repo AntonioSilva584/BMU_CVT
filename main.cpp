@@ -18,7 +18,7 @@ float Calculate_VacsI0 = 0.0;
 uint8_t MeasureCVTtemperature;
 
 uint8_t SOC;
-uint8_t MeasureVoltage100 ;
+//uint8_t MeasureVoltage ;
 double a ;
 double b ;
 double c ;
@@ -29,8 +29,8 @@ double A, B, C, D;
 
 
 /*Pins*/
-AnalogIn ReadVoltage(PA_1);                 // VARIÁVEL PARA ARMAZENAR A LEITURA DO PINO ANALÓGICO
-AnalogIn ReadSystemCurrent(PA_5);    
+AnalogIn ReadVoltage(PA_5);                 // VARIÁVEL PARA ARMAZENAR A LEITURA DO PINO ANALÓGICO
+AnalogIn ReadSystemCurrent(PA_6);    
 DigitalOut Led(PC_13);
 
 
@@ -38,7 +38,6 @@ DigitalOut Led(PC_13);
 I2C i2c(PB_7, PB_6);   //sda,scl
 CAN can(PB_8, PB_9, 1000000);
 Serial serial(PA_9, PA_10, 115200);
-
 //I2C i2c_lcd(PB_7, PB_6); // SDA, SCL
 //TextLCD_I2C lcd(&i2c_lcd, 0x4E, TextLCD::LCD16x2); // I2C bus, PCF8574 Slaveaddress, LCD Type, Device Type 
 
@@ -120,24 +119,31 @@ int main()
      
             MeasureVoltage = Voltage_moving_average();
             
+            /*
              a = -8E-8*pow(MeasureVoltage,4);
              b = 3E-5*pow(MeasureVoltage,3);
              c = -0.0026*pow(MeasureVoltage,2);
              d = -0.4058*MeasureVoltage;
             SOC = (uint8_t)(a + b + c + d + 100);
+            */
+
+            SOC = (uint8_t)(((MeasureVoltage - 9)/2.5)*100);
+
              //Led = !Led;
             //SOC = 100;
 
-            MeasureVoltage100 = 100 * (uint8_t ) MeasureVoltage; 
+            //MeasureVoltage100 = 100 * (uint8_t ) MeasureVoltage; 
             txMsg.clear(Voltage_ID);
-            txMsg << MeasureVoltage100;
+            txMsg << MeasureVoltage;
             can.write(txMsg);
             /*
             if (can.write(txMsg)){
                Led = !Led;
             }  
-          
-          */            
+          */
+
+        
+                      
             txMsg.clear(SOC_ID);
             txMsg << SOC;
             can.write(txMsg);
@@ -154,32 +160,31 @@ int main()
             
             if (can.write(txMsg)){
                Led = !Led;
-            }           
-            
+            }  
+           
             break;
 
         case SystemCurrent_ST:
 
             uint16_t SignalVacsI0 = ReadSystemCurrent.read_u16();
             Calculate_VacsI0 = (SignalVacsI0 * (ADCVoltageLimit / 65535.0));
-
-
+           // Calculate_VacsI0 = SignalVacsI0 ;
             MeasureSystemCurrent = SystemCurrent_moving_average();
-            //Led = !Led;
+            //MeasureSystemCurrent = MeasureSystemCurrent * 1.23885;
+            
             
              
 
             txMsg.clear(Current_ID);
             txMsg << MeasureSystemCurrent;
             can.write(txMsg);
+            
             break;          
         
         }
-    
-     
-    
+  
         //print na serial MED 
-        
+       
         serial.printf("temp_med Ambiente = ");
         serial.printf("%d",MeasureCVTtemperature);
         serial.printf("  Voltage Battery = ");
@@ -202,7 +207,7 @@ void setupInterrupts()
 {
     ticker16mHz.attach(&ticker16mHzISR, 5);
     ticker33mHz.attach(&ticker33mHzISR, 2);
-    ticker66mHz.attach(&ticker66mHzISR, 6);
+    ticker66mHz.attach(&ticker66mHzISR, 4);
 }
 
 
@@ -230,7 +235,9 @@ double Voltage_moving_average(){
     int i,j;
     double value, aux, ADCvoltage ,InputVoltage, AverageVoltage = 0.0 ;
     uint16_t SignalVoltage = 0.0;
-    float Calibration_Factor = 0.987;
+    //float Calibration_Factor = 0.987;
+   // float Calibration_Factor = 0.715;
+     float Calibration_Factor = 1;
     float R1_Value = 30000.0;               // VALOR DO RESISTOR 1 DO DIVISOR DE TENSÃO
     float R2_Value = 7500.0;                // VALOR DO RESISTOR 2 DO DIVISOR DE TENSÃO
 
@@ -262,13 +269,14 @@ double SystemCurrent_moving_average(){
     int i,j;
     double value,aux, InputSystemCurrent, AverageSystemCurrent, ADCSystemCurrent = 0.0 ;
     uint16_t SignalCurrent = 0.0;
-    float VacsI0 = 2.256397;
-    float Current_Calibration_Factor = 1.575;
+    float VacsI0 = 1.543;
+    //float VacsI0 = 1.293;
+    float Current_Calibration_Factor = 10;
     
 
     for(j = 0; j < (sample); j++){ 
 
-        for(i = 0; i < (sample)*2 ; i++){
+        for(i = 0; i < (sample)*4 ; i++){
 
             SignalCurrent = ReadSystemCurrent.read_u16();
             InputSystemCurrent = (SignalCurrent * (ADCVoltageLimit / 65535.0));
@@ -276,7 +284,9 @@ double SystemCurrent_moving_average(){
             aux += ADCSystemCurrent;
         }       
             
-            value = (aux * Current_Calibration_Factor)  / ((double)sample*2);
+            //value = (aux * Current_Calibration_Factor)  / ((double)sample*4);
+            value = (aux * 1.746)  / ((double)sample*4);
+            //value = (aux)  / ((double)sample*4);
             /*
             if(value > AverageSystemCurrent){
                 AverageSystemCurrent = value;
