@@ -270,7 +270,7 @@ double SystemCurrent_moving_average(){
     double value,aux, InputSystemCurrent, AverageSystemCurrent, ADCSystemCurrent = 0.0 ;
     uint16_t SignalCurrent = 0.0;
     //float VacsI0 = 1.543;   //BMU SOLDADA
-   // float VacsI0 = 1.570;     // BMU Socket
+   float VacsI0 = 1.570;     // BMU Socket
     float Current_Calibration_Factor = 1.746;
 
     for(j = 0; j < (sample); j++){ 
