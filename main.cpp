@@ -269,10 +269,9 @@ double SystemCurrent_moving_average(){
     int i,j;
     double value,aux, InputSystemCurrent, AverageSystemCurrent, ADCSystemCurrent = 0.0 ;
     uint16_t SignalCurrent = 0.0;
-    float VacsI0 = 1.543;
-    //float VacsI0 = 1.293;
-    float Current_Calibration_Factor = 10;
-    
+    //float VacsI0 = 1.543;   //BMU SOLDADA
+   // float VacsI0 = 1.570;     // BMU Socket
+    float Current_Calibration_Factor = 1.746;
 
     for(j = 0; j < (sample); j++){ 
 
@@ -284,14 +283,9 @@ double SystemCurrent_moving_average(){
             aux += ADCSystemCurrent;
         }       
             
-            //value = (aux * Current_Calibration_Factor)  / ((double)sample*4);
-            value = (aux * 1.746)  / ((double)sample*4);
-            //value = (aux)  / ((double)sample*4);
-            /*
-            if(value > AverageSystemCurrent){
-                AverageSystemCurrent = value;
-            }
-           */
+            value = (aux * Current_Calibration_Factor)  / ((double)sample*4);
+            //value = (aux * 1.746)  / ((double)sample*4);
+            
     }
     //return value;
     return value/(double)sample; // I don't know why we need divide by sample, but works.
